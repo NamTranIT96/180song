@@ -1,11 +1,17 @@
 <template>
-    <div>
-        <div class="title-section">
-            Select your favorite genres
+    <div style="padding: 20px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-content: center">
+            <div class="title-section">
+                Select your favorite genres
+            </div>
+            <div>
+                <el-button type="success" icon="el-icon-close" size="mini" round @click="clearAllGenres()">Clear all
+                    genre
+                </el-button>
+            </div>
         </div>
 
         <div class="list-music-genre">
-
             <div class="item-music-genre" :class="{'active': item.active}"
                  @click="changeStatus(item)"
                  v-for="(item,index) in list_music_genre"
@@ -14,32 +20,39 @@
             </div>
         </div>
 
-        <div class="title-section mt-10">
+        <div class="title-section mt-20">
             Enjoy your never-listen-to songs
         </div>
 
-        <div class="list-recommended-song" v-if="listGenreActive != ''" v-loading="loading_get_data">
+        <div v-if="listGenreDeactive != ''">
 
-            <div class="item-recommended-song" v-for="(item,index) in list_recommended_song" :key="index">
-                <img :src="item.album.images[0].url">
-                <div class="content">
-                    {{item.name}}
+            <div class="list-recommended-song" v-loading="loading_get_data">
+                <div class="item-recommended-song" v-for="(item,index) in list_recommended_song" :key="index">
+                    <img :src="item.album.images[0].url">
+                    <div class="content">
+                        {{item.name}}
+                    </div>
+
+                    <div class="button-control">
+                        <el-button icon="el-icon-headset" @click="listenSong(item.uri)" type="success" size="mini"
+                                   circle>
+                        </el-button>
+                    </div>
+
                 </div>
+            </div>
 
-                <div class="button-control">
-
-                    <el-button icon="el-icon-headset" @click="listenSong(item.uri)" type="success" size="mini"
-                               circle></el-button>
-
-                </div>
-
+            <div class="mt-20" style="text-align: center">
+                <el-button type="success" round @click="viewMoreSong()">View more</el-button>
             </div>
 
         </div>
 
+
         <div v-else>
             Please choose your genre :D
         </div>
+
 
     </div>
 </template>
@@ -47,6 +60,8 @@
 <script>
     const axios = require('axios');
     import * as url from "url";
+
+    import RETURN_URL from "./base_urls"
 
     url.URLSearchParams = URLSearchParams;
     export default {
@@ -56,38 +71,53 @@
                 list_music_genre: [],
                 token_info: {},
                 list_recommended_song: [],
-                loading_get_data: false
+                loading_get_data: false,
+                pagination: 0,
             }
         },
 
         computed: {
             // a computed getter
-            listGenreActive: function () {
+            listGenreDeactive: function () {
                 var arr_genre_active = []
 
+                var check_have_active = false
+
                 this.list_music_genre.forEach(item => {
-                    if (item.active) {
-                        if (arr_genre_active.length < 5)
-                            arr_genre_active.push(item.name)
+                    if (!item.active) {
+                        arr_genre_active.push(item.name)
+                    } else {
+                        check_have_active = true
                     }
 
                 })
 
-                if (arr_genre_active.length > 0) {
-                    return arr_genre_active.join(',')
-                }
-                return ''
+                if (!check_have_active)
+                    return []
+                else
+                    return arr_genre_active
             }
         },
 
         watch: {
             // eslint-disable-next-line no-unused-vars
-            listGenreActive(val) {
+            listGenreDeactive(val) {
                 this.getTrackByCategory()
             },
         },
 
         methods: {
+
+            viewMoreSong() {
+                this.pagination += 1
+                this.getTrackByCategory(true)
+            },
+
+            clearAllGenres() {
+                this.list_music_genre.forEach(item => {
+                    item.active = false
+                })
+            },
 
             listenSong(url) {
                 window.open(url)
@@ -136,7 +166,7 @@
                 if (access_token == null) {
                     var my_client_id = '0d29de0cd00a48389701b9ec2fa89434'
                     var scopes = 'playlist-modify-public'
-                    var redirect_uri = 'http://localhost:8080/'
+                    var redirect_uri = RETURN_URL
 
                     window.location.href = 'https://accounts.spotify.com/authorize' +
                         '?response_type=code' +
@@ -157,7 +187,7 @@
 
                     var client_id = '0d29de0cd00a48389701b9ec2fa89434'
                     var client_secret = '3d178f1e3dc34fd9aaebe2712a6cced4'
-                    var redirect_uri = 'http://localhost:8080/'
+                    var redirect_uri = RETURN_URL
                     var encodedData = window.btoa(client_id + ':' + client_secret);
                     var authorization = 'Basic ' + encodedData;
                     const data = new URLSearchParams();
@@ -187,34 +217,45 @@
                     v.login()
                 }
             },
-            getTrackByCategory() {
+            getTrackByCategory(is_view_more = false) {
                 var v = this
 
                 var access_token = localStorage.getItem('access_token_180song')
 
-                if (access_token && v.listGenreActive != '') {
+                if (access_token && v.listGenreDeactive.length > 0) {
                     v.loading_get_data = true
                     var token = 'Bearer ' + access_token
 
                     var url = 'https://api.spotify.com/v1/recommendations?seed_genres='
 
-                    var path = encodeURIComponent(v.listGenreActive)
+                    let promises = []
 
-                    var final_url = url + path
+                    let listGenreDeactiveSlice = v.listGenreDeactive.slice(v.pagination * 18, v.pagination * 18 + 18)
 
-                    axios.get(final_url, {
-                        headers: {Authorization: token}
-                    }).then(result => {
+                    listGenreDeactiveSlice.forEach(item => {
+                        let path = encodeURIComponent(item)
+
+                        let final_url = url + path
+
+                        promises.push(
+                            axios.get(final_url, {
+                                headers: {Authorization: token}
+                            })
+                        )
+                    })
+
+
+                    Promise.all(promises).then(function (results) {
+
+                        if (!is_view_more)
+                            v.list_recommended_song = []
+
+                        results.forEach(item => {
+                            v.list_recommended_song.push(item.data.tracks[0])
+                        })
+
                         v.loading_get_data = false
-                        if (result.data.tracks) {
-                            v.list_recommended_song = result.data.tracks
-                        }
-                        // eslint-disable-next-line no-unused-vars
-                    }).catch((error => {
-                        v.loading_get_data = false
-                        localStorage.removeItem('access_token_180song')
-                        v.login()
-                    }))
+                    });
                 }
 
 
@@ -229,20 +270,21 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 
-    .mt-10 {
-        margin-top: 10px;
+    .mt-20 {
+        margin-top: 20px;
     }
 
     .title-section {
-        font-size: 16px;
+        font-size: 18px;
         font-weight: bold;
         margin-bottom: 10px;
+        color: #96BF47;
     }
 
     .list-music-genre {
         display: flex;
         flex-wrap: wrap;
-        max-height: 30vh;
+        max-height: 25vh;
         overflow-y: scroll;
         border: 1px solid #fff;
         padding: 10px;
@@ -275,7 +317,7 @@
     }
 
     .list-recommended-song .item-recommended-song {
-        width: calc((100vw - 110px) / 6);
+        width: calc((100vw - 146px) / 6);
         border: 1px solid #ffff;
         border-radius: 10px;
         position: relative;
@@ -300,6 +342,8 @@
         border-bottom-right-radius: 0px;
         width: 100%;
         opacity: 0.5;
+        height: 220px;
+        object-fit: cover;
     }
 
 
