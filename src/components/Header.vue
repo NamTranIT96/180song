@@ -19,7 +19,7 @@
 
         <!-- Right aligned nav items -->
         <b-navbar-nav class="ml-auto">
-          <b-nav-item href="#" target="_blank" style="color: #fff!important">Terms</b-nav-item>
+          <b-nav-item @click="handleClickTerms" href="javascript:void(0)" style="color: #fff!important">Terms</b-nav-item>
           <b-nav-item target="_blank" href="https://twitter.com/activators_dev/" style="color: #fff!important">About Us</b-nav-item>
           <b-nav-item target="_blank" href="https://activators.dev/apps/" style="color: #fff!important">Explore Apps</b-nav-item>
           <!--          <b-nav-form>-->
@@ -63,14 +63,20 @@ export default {
 
   watch: {},
 
-  methods: {},
+  methods: {
+    handleClickTerms(){
+      console.log('cliked')
+      this.$emit('clickedTerm');
+    }
+  },
   beforeDestroy() {
     this.$root.$off('getUserInfo');
   },
   mounted() {
+    console.log('fuck?')
     this.$root.$on('getUserInfo', (data) => {
       this.$set(this, 'userInfo', data);
-    }).bind(this);
+    });
   }
 }
 </script>
