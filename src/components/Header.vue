@@ -20,8 +20,8 @@
         <!-- Right aligned nav items -->
         <b-navbar-nav class="ml-auto">
           <b-nav-item href="#" style="color: #fff!important">Terms</b-nav-item>
-          <b-nav-item href="#" style="color: #fff!important">About Us</b-nav-item>
-          <b-nav-item href="#" style="color: #fff!important">Explore Apps</b-nav-item>
+          <b-nav-item href="https://twitter.com/activators_dev/" style="color: #fff!important">About Us</b-nav-item>
+          <b-nav-item href="https://activators.dev/apps/" style="color: #fff!important">Explore Apps</b-nav-item>
           <!--          <b-nav-form>-->
           <!--            <b-form-input size="sm" class="mr-sm-2" placeholder="Search"></b-form-input>-->
           <!--            <b-button size="sm" class="my-2 my-sm-0" type="submit">Search</b-button>-->
