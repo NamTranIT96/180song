@@ -1,6 +1,6 @@
 <template>
-    <div style="padding: 20px">
-        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-content: center">
+    <div style="padding: 20px" v-loading="loading_main">
+        <div class="title-wrapper">
             <div class="title-section">
                 Select your favorite genres
             </div>
@@ -20,9 +20,17 @@
             </div>
         </div>
 
-        <div class="title-section mt-20">
-            Enjoy your never-listen-to songs
+        <div class="title-wrapper">
+            <div class="title-section mt-20">
+                Enjoy your never-listen-to songs
+            </div>
+            <div style="display: flex; align-items: center" v-if="listGenreDeactive != ''">
+                <el-button type="success" icon="el-icon-plus" size="mini" round @click="createPlayList()">
+                    Create Play List
+                </el-button>
+            </div>
         </div>
+
 
         <div v-if="listGenreDeactive != ''">
 
@@ -73,6 +81,10 @@
                 list_recommended_song: [],
                 loading_get_data: false,
                 pagination: 0,
+
+                info_user: {},
+
+                loading_main: false
             }
         },
 
@@ -96,6 +108,17 @@
                     return []
                 else
                     return arr_genre_active
+            },
+            listGenreActive: function () {
+                var arr_genre_active = []
+
+                this.list_music_genre.forEach(item => {
+                    if (item.active) {
+                        arr_genre_active.push(item.name)
+                    }
+                })
+
+                return arr_genre_active.join(' + ')
             }
         },
 
@@ -107,6 +130,83 @@
         },
 
         methods: {
+
+            createPlayList() {
+                var v = this
+
+                var access_token = localStorage.getItem('access_token_180song')
+
+                var token = 'Bearer ' + access_token
+
+                var url = `https://api.spotify.com/v1/users/${v.info_user.id}/playlists`
+
+                var to_date = new Date()
+
+                var data = {
+                    name: 'Play list 180 degree different with genres: ' + v.listGenreActive + ' ' + to_date.toLocaleDateString(),
+                    description: 'Play list 180 degree different with genres:  ' + v.listGenreActive + ' ' + to_date.toLocaleDateString(),
+                    public: true
+                }
+
+                v.loading_main = true
+
+                axios.post(url, JSON.stringify(data), {
+                    headers: {Authorization: token}
+                }).then(result => {
+                    if (result.data) {
+                        v.addSongToPlayList(result.data)
+                    }
+                    // eslint-disable-next-line no-unused-vars
+                }).catch((error => {
+                    v.loading_main = false
+                    localStorage.removeItem('access_token_180song')
+                    v.login()
+                }))
+            },
+
+            addSongToPlayList(item_play_list) {
+                var v = this
+
+                var access_token = localStorage.getItem('access_token_180song')
+
+                var token = 'Bearer ' + access_token
+
+                var url = `https://api.spotify.com/v1/playlists/${item_play_list.id}/tracks?uris=`
+
+                var array_uri_song = []
+
+                v.list_recommended_song.forEach(item => {
+                    if (item.uri)
+                        array_uri_song.push(encodeURIComponent(item.uri))
+                })
+
+                var str_array_uri = array_uri_song.join(',')
+
+                var final_url = url + str_array_uri
+
+
+                axios.post(final_url, {}, {
+                    headers: {
+                        Authorization: token,
+                        Accept: 'application/json'
+                    }
+                }).then(result => {
+                    if (result.data) {
+                        v.$notify({
+                            title: 'Success',
+                            message: 'Add play list successfully',
+                            type: 'success'
+                        });
+                        window.location.href = item_play_list.uri
+                    }
+                    v.loading_main = false
+                    // eslint-disable-next-line no-unused-vars
+                }).catch((error => {
+                    v.loading_main = false
+                    localStorage.removeItem('access_token_180song')
+                    // v.login()
+                }))
+            },
 
             viewMoreSong() {
                 this.pagination += 1
@@ -155,9 +255,29 @@
                     v.login()
                 }))
 
+                v.getInfoUser()
 
                 v.getTrackByCategory()
 
+            },
+            getInfoUser() {
+                var v = this
+
+                var access_token = localStorage.getItem('access_token_180song')
+
+                var token = 'Bearer ' + access_token
+
+                axios.get('https://api.spotify.com/v1/me', {
+                    headers: {Authorization: token}
+                }).then(result => {
+                    if (result.data) {
+                        v.$set(v, 'info_user', result.data)
+                    }
+                    // eslint-disable-next-line no-unused-vars
+                }).catch((error => {
+                    localStorage.removeItem('access_token_180song')
+                    v.login()
+                }))
             },
             login() {
 
@@ -269,6 +389,13 @@
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+
+    .title-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-content: center;
+    }
 
     .mt-20 {
         margin-top: 20px;

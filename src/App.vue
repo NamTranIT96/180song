@@ -23,6 +23,10 @@
 
     }
 
+    body {
+        color: white !important;
+    }
+
     html {
         background-color: #171E29 !important;
         color: white !important;
