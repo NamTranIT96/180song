@@ -4,11 +4,11 @@
             <div class="title-section">
                 Select your favorite genres
             </div>
-            <div>
-                <el-button type="success" icon="el-icon-close" size="mini" round @click="clearAllGenres()">Clear all
-                    genre
-                </el-button>
-            </div>
+        </div>
+        <div class="button-middle" v-if="listGenreActive != ''">
+            <el-button type="success" icon="el-icon-close" size="small" round @click="clearAllGenres()">Clear all
+                genre
+            </el-button>
         </div>
 
         <div class="list-music-genre">
@@ -24,11 +24,12 @@
             <div class="title-section mt-20">
                 Enjoy your never-listen-to songs
             </div>
-            <div style="display: flex; align-items: center" v-if="listGenreDeactive != ''">
-                <el-button type="success" icon="el-icon-plus" size="mini" round @click="createPlayList()">
-                    Create Play List
-                </el-button>
-            </div>
+        </div>
+
+        <div class="button-middle" v-if="listGenreDeactive != ''">
+            <el-button type="success" icon="el-icon-plus" size="small" round @click="createPlayList()">
+                Create Play List
+            </el-button>
         </div>
 
 
@@ -391,10 +392,7 @@
 <style scoped>
 
     .title-wrapper {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-content: center;
+        text-align: center;
     }
 
     .mt-20 {
@@ -402,10 +400,10 @@
     }
 
     .title-section {
-        font-size: 18px;
+        font-size: 48px;
         font-weight: bold;
-        margin-bottom: 10px;
         color: #96BF47;
+        text-align: center;
     }
 
     .list-music-genre {
@@ -471,6 +469,12 @@
         opacity: 0.5;
         height: 220px;
         object-fit: cover;
+    }
+
+    .button-middle {
+        text-align: center;
+        margin-bottom: 30px;
+        margin-top: 15px
     }
 
 
